@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>醉酒檢測遊戲</title>
+    <style>
+        /* CSS Variables - Design System */
+        :root {
+            /* Colors */
+            --color-primary: #6366f1;
+            --color-primary-dark: #4f46e5;
+            --color-primary-light: #818cf8;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+            --color-bg: #0f172a;
+            --color-surface: #1e293b;
+            --color-text: #f1f5f9;
+            --color-text-muted: #94a3b8;
+
+            /* Button Colors */
+            --btn-color-1: #ef4444;
+            --btn-color-2: #f59e0b;
+            --btn-color-3: #10b981;
+            --btn-color-4: #3b82f6;
+            --btn-color-5: #8b5cf6;
+            --btn-color-6: #ec4899;
+            --btn-color-7: #14b8a6;
+            --btn-color-8: #f97316;
+
+            /* Typography */
+            --font-primary: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
+            --text-4xl: 2.25rem;
+            --font-semibold: 600;
+            --font-bold: 700;
+
+            /* Spacing */
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+
+            /* Border Radius */
+            --radius-lg: 1rem;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+
+            /* Animation */
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background: var(--color-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Container */
+        .game-container {
+            max-width: 1200px;
+            width: 100%;
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            text-align: center;
+            animation: fadeIn var(--duration-normal) var(--ease-out);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Start Screen */
+        .game-title {
+            font-size: var(--text-4xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-8);
+            background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            padding: var(--space-4) var(--space-8);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-xl);
+            font-weight: var(--font-semibold);
+            border: none;
+            cursor: pointer;
+            transition: all var(--duration-normal) var(--ease-out);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Gameplay Screen */
+        .gameplay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: var(--space-4);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .lives-indicator {
+            display: flex;
+            gap: 0.5rem;
+            font-size: var(--text-2xl);
+        }
+
+        .life-icon {
+            transition: opacity var(--duration-normal) var(--ease-out);
+        }
+
+        .life-icon.lost {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+
+        .question-counter {
+            font-size: var(--text-xl);
+            font-weight: var(--font-semibold);
+        }
+
+        .challenge-instruction {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            margin: var(--space-4) 0;
+            color: var(--color-primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Color swatch for inline display */
+        .color-swatch {
+            display: inline-block;
+            width: 1.5em;
+            height: 1.5em;
+            border-radius: 0.3em;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Timer */
+        .timer-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: var(--space-6);
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--color-surface);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .timer-bar-fill {
+            height: 100%;
+            transition: width 16ms linear;
+            border-radius: var(--radius-full);
+        }
+
+        .timer-bar-fill.time-high {
+            background: var(--color-success);
+        }
+
+        .timer-bar-fill.time-medium {
+            background: var(--color-warning);
+        }
+
+        .timer-bar-fill.time-low {
+            background: var(--color-danger);
+            animation: pulse 500ms infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Game Area */
+        .game-area {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .game-area {
+                height: 600px;
+            }
+        }
+
+        /* Game Buttons */
+        .game-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: var(--font-bold);
+            color: white;
+            border: none;
+            cursor: pointer;
+            position: absolute;
+            transition: transform var(--duration-fast) var(--ease-out);
+            box-shadow: var(--shadow-md);
+            user-select: none;
+        }
+
+        .game-button:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .game-button:active {
+            animation: scaleClick var(--duration-fast);
+        }
+
+        @keyframes scaleClick {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(0.95);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* End Screens */
+        .end-message {
+            font-size: var(--text-4xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-8);
+        }
+
+        .win-message {
+            color: var(--color-success);
+        }
+
+        .lose-message {
+            color: var(--color-danger);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .game-title {
+                font-size: var(--text-3xl);
+            }
+
+            .challenge-instruction {
+                font-size: var(--text-2xl);
+            }
+
+            .gameplay-header {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen active">
+            <h1 class="game-title">醉酒檢測遊戲</h1>
+            <p style="margin-bottom: 2rem; color: var(--color-text-muted);">測試你的反應力和判斷力</p>
+            <button class="btn-primary" onclick="startGame()">開始</button>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="gameplayScreen" class="screen">
+            <div class="gameplay-header">
+                <div class="lives-indicator" id="livesIndicator"></div>
+                <div class="question-counter" id="questionCounter"></div>
+            </div>
+
+            <div class="challenge-instruction" id="challengeInstruction"></div>
+
+            <div class="timer-container">
+                <div class="timer-bar">
+                    <div class="timer-bar-fill time-high" id="timerBarFill"></div>
+                </div>
+            </div>
+
+            <div class="game-area" id="gameArea"></div>
+        </div>
+
+        <!-- Win Screen -->
+        <div id="winScreen" class="screen">
+            <div class="end-message win-message">恭喜你很清醒</div>
+            <button class="btn-primary" onclick="restartGame()">再玩一次</button>
+        </div>
+
+        <!-- Lose Screen -->
+        <div id="loseScreen" class="screen">
+            <div class="end-message lose-message">你醉了，別喝了</div>
+            <p style="margin-bottom: 2rem; color: var(--color-text-muted);">你完成了 <span id="finalQuestion"></span> 題</p>
+            <button class="btn-primary" onclick="restartGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const GameState = {
+            NOT_STARTED: 'NOT_STARTED',
+            PLAYING: 'PLAYING',
+            WON: 'WON',
+            LOST: 'LOST'
+        };
+
+        const ChallengeType = {
+            // Basic (CT1-CT5)
+            LARGEST_BUTTON: 'LARGEST_BUTTON',
+            SMALLEST_BUTTON: 'SMALLEST_BUTTON',
+            HIGHEST_NUMBER: 'HIGHEST_NUMBER',
+            LOWEST_NUMBER: 'LOWEST_NUMBER',
+            SPECIFIC_NUMBER: 'SPECIFIC_NUMBER',
+            // Color (CT6)
+            SPECIFIC_COLOR: 'SPECIFIC_COLOR',
+            // Shape (CT7-CT10)
+            CIRCLE_SHAPE: 'CIRCLE_SHAPE',
+            SQUARE_SHAPE: 'SQUARE_SHAPE',
+            ROUNDED_SQUARE_SHAPE: 'ROUNDED_SQUARE_SHAPE',
+            SPECIFIC_SHAPE: 'SPECIFIC_SHAPE',
+            // Number Properties (CT11-CT16)
+            EVEN_NUMBER: 'EVEN_NUMBER',
+            ODD_NUMBER: 'ODD_NUMBER',
+            ONES_DIGIT: 'ONES_DIGIT',
+            TENS_DIGIT: 'TENS_DIGIT',
+            TWO_DIGIT_NUMBER: 'TWO_DIGIT_NUMBER',
+            ONE_DIGIT_NUMBER: 'ONE_DIGIT_NUMBER',
+            // Combined Conditions (CT17-CT19)
+            COMBINED_AND: 'COMBINED_AND',
+            COMBINED_OR: 'COMBINED_OR',
+            EXCLUSION_NOT: 'EXCLUSION_NOT',
+            // Position (CT20-CT23)
+            LEFTMOST: 'LEFTMOST',
+            RIGHTMOST: 'RIGHTMOST',
+            TOPMOST: 'TOPMOST',
+            BOTTOMMOST: 'BOTTOMMOST'
+        };
+
+        const ButtonShape = {
+            CIRCLE: 'CIRCLE',
+            SQUARE: 'SQUARE',
+            ROUNDED_SQUARE: 'ROUNDED_SQUARE'
+        };
+
+        // Game Configuration
+        const BUTTON_COLORS = [
+            { hex: '#ef4444', name: '紅色' },
+            { hex: '#f59e0b', name: '橙色' },
+            { hex: '#10b981', name: '綠色' },
+            { hex: '#3b82f6', name: '藍色' },
+            { hex: '#8b5cf6', name: '紫色' },
+            { hex: '#ec4899', name: '粉紅色' },
+            { hex: '#14b8a6', name: '青色' },
+            { hex: '#f97316', name: '橘色' }
+        ];
+
+        const SHAPE_NAMES = {
+            [ButtonShape.CIRCLE]: '圓形',
+            [ButtonShape.SQUARE]: '方形',
+            [ButtonShape.ROUNDED_SQUARE]: '圓角方形'
+        };
+
+        const TOTAL_QUESTIONS = 10;
+        const INITIAL_LIVES = 3;
+        const QUESTION_TIME = 5000;
+        const TIMER_UPDATE_INTERVAL = 16;
+
+        // Game Variables
+        let gameState = GameState.NOT_STARTED;
+        let currentQuestion = 1;
+        let livesRemaining = INITIAL_LIVES;
+        let currentChallenge = null;
+        let currentButtons = [];
+        let timerInterval = null;
+        let timeRemaining = QUESTION_TIME;
+
+        // Utility Functions
+        function random(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function randomChoice(array) {
+            return array[random(0, array.length - 1)];
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Improved collision detection
+        function checkCollision(x1, y1, size1, x2, y2, size2) {
+            const centerX1 = x1 + size1 / 2;
+            const centerY1 = y1 + size1 / 2;
+            const centerX2 = x2 + size2 / 2;
+            const centerY2 = y2 + size2 / 2;
+
+            const dx = centerX1 - centerX2;
+            const dy = centerY1 - centerY2;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = (size1 + size2) / 2 + 15; // 15px spacing
+
+            return distance < minDistance;
+        }
+
+        // Game Flow Functions
+        function startGame() {
+            gameState = GameState.PLAYING;
+            currentQuestion = 1;
+            livesRemaining = INITIAL_LIVES;
+            showScreen('gameplayScreen');
+            generateQuestion();
+        }
+
+        function restartGame() {
+            showScreen('startScreen');
+            gameState = GameState.NOT_STARTED;
+        }
+
+        function generateQuestion() {
+            document.getElementById('gameArea').innerHTML = '';
+            currentButtons = [];
+
+            updateLivesIndicator();
+            updateQuestionCounter();
+
+            const challengeTypes = Object.values(ChallengeType);
+            const challengeType = randomChoice(challengeTypes);
+
+            const buttonCount = random(3, 6);
+            const buttons = [];
+
+            // Generate buttons
+            for (let i = 0; i < buttonCount; i++) {
+                const button = {
+                    number: random(0, 99),
+                    size: random(40, 120),
+                    colorObj: randomChoice(BUTTON_COLORS),
+                    shape: randomChoice(Object.values(ButtonShape)),
+                    position: null
+                };
+                buttons.push(button);
+            }
+
+            // Position buttons without overlap (must be done before determining position-based challenges)
+            const gameArea = document.getElementById('gameArea');
+            const areaWidth = gameArea.clientWidth;
+            const areaHeight = gameArea.clientHeight;
+
+            buttons.forEach((button, index) => {
+                let attempts = 0;
+                let position = null;
+
+                while (attempts < 200) {
+                    const maxX = Math.max(0, areaWidth - button.size);
+                    const maxY = Math.max(0, areaHeight - button.size);
+                    const x = maxX > 0 ? random(0, maxX) : 0;
+                    const y = maxY > 0 ? random(0, maxY) : 0;
+
+                    const hasCollision = buttons.slice(0, index).some(existingBtn => {
+                        if (!existingBtn.position) return false;
+                        return checkCollision(
+                            x, y, button.size,
+                            existingBtn.position.x, existingBtn.position.y, existingBtn.size
+                        );
+                    });
+
+                    if (!hasCollision) {
+                        position = { x, y };
+                        break;
+                    }
+
+                    attempts++;
+                }
+
+                if (!position) {
+                    const maxX = Math.max(0, areaWidth - button.size);
+                    const maxY = Math.max(0, areaHeight - button.size);
+                    position = {
+                        x: maxX > 0 ? random(0, maxX) : 0,
+                        y: maxY > 0 ? random(0, maxY) : 0
+                    };
+                }
+
+                button.position = position;
+            });
+
+            // Determine correct answer (after positioning for position-based challenges, but BEFORE rendering)
+            const result = determineCorrectAnswer(challengeType, buttons);
+            let correctIndices = result.correctIndices;
+            const instructionText = result.instructionText;
+
+            currentChallenge = {
+                type: challengeType,
+                correctIndices: correctIndices,
+                instructionText: instructionText,
+                isExclusion: result.isExclusion || false
+            };
+
+            // Render buttons (AFTER determining correct answer, so modified properties are reflected)
+            buttons.forEach((button, index) => {
+                const btnElement = document.createElement('button');
+                btnElement.className = 'game-button';
+                btnElement.textContent = button.number;
+                btnElement.style.width = `${button.size}px`;
+                btnElement.style.height = `${button.size}px`;
+                btnElement.style.fontSize = `${button.size * 0.3}px`;
+                btnElement.style.backgroundColor = button.colorObj.hex;
+                btnElement.style.left = `${button.position.x}px`;
+                btnElement.style.top = `${button.position.y}px`;
+
+                switch (button.shape) {
+                    case ButtonShape.CIRCLE:
+                        btnElement.style.borderRadius = '50%';
+                        break;
+                    case ButtonShape.SQUARE:
+                        btnElement.style.borderRadius = '0';
+                        break;
+                    case ButtonShape.ROUNDED_SQUARE:
+                        btnElement.style.borderRadius = '12px';
+                        break;
+                }
+
+                btnElement.onclick = () => handleButtonClick(index);
+                gameArea.appendChild(btnElement);
+            });
+
+            currentButtons = buttons;
+            document.getElementById('challengeInstruction').innerHTML = instructionText;
+            startTimer();
+        }
+
+        function determineCorrectAnswer(challengeType, buttons) {
+            let correctIndices = [];
+            let instructionText = '';
+            let isExclusion = false;
+
+            switch (challengeType) {
+                // Basic challenges (CT1-CT5)
+                case ChallengeType.LARGEST_BUTTON:
+                    correctIndices = [buttons.reduce((maxIdx, btn, idx, arr) =>
+                        btn.size > arr[maxIdx].size ? idx : maxIdx, 0)];
+                    instructionText = '點擊最大顆';
+                    break;
+
+                case ChallengeType.SMALLEST_BUTTON:
+                    correctIndices = [buttons.reduce((minIdx, btn, idx, arr) =>
+                        btn.size < arr[minIdx].size ? idx : minIdx, 0)];
+                    instructionText = '點擊最小顆';
+                    break;
+
+                case ChallengeType.HIGHEST_NUMBER:
+                    correctIndices = [buttons.reduce((maxIdx, btn, idx, arr) =>
+                        btn.number > arr[maxIdx].number ? idx : maxIdx, 0)];
+                    instructionText = '點擊數字最大';
+                    break;
+
+                case ChallengeType.LOWEST_NUMBER:
+                    correctIndices = [buttons.reduce((minIdx, btn, idx, arr) =>
+                        btn.number < arr[minIdx].number ? idx : minIdx, 0)];
+                    instructionText = '點擊數字最小';
+                    break;
+
+                case ChallengeType.SPECIFIC_NUMBER:
+                    const targetNum = randomChoice(buttons).number;
+                    correctIndices = buttons.map((btn, idx) => btn.number === targetNum ? idx : -1).filter(idx => idx !== -1);
+                    instructionText = `點擊數字 ${targetNum}`;
+                    break;
+
+                // Color challenges (CT6)
+                case ChallengeType.SPECIFIC_COLOR:
+                    const targetColor = randomChoice(buttons).colorObj;
+                    correctIndices = buttons.map((btn, idx) => btn.colorObj.hex === targetColor.hex ? idx : -1).filter(idx => idx !== -1);
+                    // Ensure at least one button has the target color
+                    if (correctIndices.length === 0) {
+                        buttons[0].colorObj = targetColor;
+                        correctIndices = [0];
+                    }
+                    instructionText = `點擊 <span class="color-swatch" style="background-color: ${targetColor.hex};"></span> 按鈕`;
+                    break;
+
+                // Shape challenges (CT7-CT10)
+                case ChallengeType.CIRCLE_SHAPE:
+                    correctIndices = buttons.map((btn, idx) => btn.shape === ButtonShape.CIRCLE ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].shape = ButtonShape.CIRCLE;
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊圓形按鈕';
+                    break;
+
+                case ChallengeType.SQUARE_SHAPE:
+                    correctIndices = buttons.map((btn, idx) => btn.shape === ButtonShape.SQUARE ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].shape = ButtonShape.SQUARE;
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊方形按鈕';
+                    break;
+
+                case ChallengeType.ROUNDED_SQUARE_SHAPE:
+                    correctIndices = buttons.map((btn, idx) => btn.shape === ButtonShape.ROUNDED_SQUARE ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].shape = ButtonShape.ROUNDED_SQUARE;
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊圓角方形按鈕';
+                    break;
+
+                case ChallengeType.SPECIFIC_SHAPE:
+                    const targetShape = randomChoice(buttons).shape;
+                    correctIndices = buttons.map((btn, idx) => btn.shape === targetShape ? idx : -1).filter(idx => idx !== -1);
+                    instructionText = `點擊${SHAPE_NAMES[targetShape]}`;
+                    break;
+
+                // Number property challenges (CT11-CT16)
+                case ChallengeType.EVEN_NUMBER:
+                    correctIndices = buttons.map((btn, idx) => btn.number % 2 === 0 ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = buttons[0].number % 2 === 0 ? buttons[0].number : buttons[0].number + 1;
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊偶數';
+                    break;
+
+                case ChallengeType.ODD_NUMBER:
+                    correctIndices = buttons.map((btn, idx) => btn.number % 2 === 1 ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = buttons[0].number % 2 === 1 ? buttons[0].number : buttons[0].number + 1;
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊奇數';
+                    break;
+
+                case ChallengeType.ONES_DIGIT:
+                    const targetOnesDigit = random(0, 9);
+                    correctIndices = buttons.map((btn, idx) => btn.number % 10 === targetOnesDigit ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = Math.floor(buttons[0].number / 10) * 10 + targetOnesDigit;
+                        correctIndices = [0];
+                    }
+                    instructionText = `點擊個位數是 ${targetOnesDigit}`;
+                    break;
+
+                case ChallengeType.TENS_DIGIT:
+                    const targetTensDigit = random(1, 9);
+                    correctIndices = buttons.map((btn, idx) => Math.floor(btn.number / 10) === targetTensDigit ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = targetTensDigit * 10 + (buttons[0].number % 10);
+                        correctIndices = [0];
+                    }
+                    instructionText = `點擊十位數是 ${targetTensDigit}`;
+                    break;
+
+                case ChallengeType.TWO_DIGIT_NUMBER:
+                    correctIndices = buttons.map((btn, idx) => btn.number >= 10 && btn.number <= 99 ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = random(10, 99);
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊兩位數';
+                    break;
+
+                case ChallengeType.ONE_DIGIT_NUMBER:
+                    correctIndices = buttons.map((btn, idx) => btn.number >= 0 && btn.number <= 9 ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        buttons[0].number = random(0, 9);
+                        correctIndices = [0];
+                    }
+                    instructionText = '點擊一位數';
+                    break;
+
+                // Combined conditions (CT17-CT19)
+                case ChallengeType.COMBINED_AND:
+                    const andCombinations = [
+                        {
+                            check: (btn) => btn.size === Math.max(...buttons.map(b => b.size)) && btn.colorObj.name === '紅色',
+                            text: (color) => `點擊最大的 <span class="color-swatch" style="background-color: ${color};"></span> 按鈕`,
+                            color: '#ef4444'
+                        },
+                        {
+                            check: (btn) => btn.size === Math.min(...buttons.map(b => b.size)) && btn.shape === ButtonShape.CIRCLE,
+                            text: () => '點擊最小的圓形按鈕',
+                            color: null
+                        },
+                        {
+                            check: (btn) => btn.number === Math.max(...buttons.map(b => b.number)) && btn.colorObj.name === '藍色',
+                            text: (color) => `點擊 <span class="color-swatch" style="background-color: ${color};"></span> 且數字最大的按鈕`,
+                            color: '#3b82f6'
+                        },
+                        {
+                            check: (btn) => btn.shape === ButtonShape.SQUARE && btn.number % 2 === 0,
+                            text: () => '點擊方形且偶數的按鈕',
+                            color: null
+                        }
+                    ];
+                    const andCombo = randomChoice(andCombinations);
+                    correctIndices = buttons.map((btn, idx) => andCombo.check(btn) ? idx : -1).filter(idx => idx !== -1);
+                    if (correctIndices.length === 0) {
+                        // Modify first button to match
+                        if (andCombo.text.includes('最大的紅色')) {
+                            buttons[0].size = Math.max(...buttons.map(b => b.size));
+                            buttons[0].colorObj = BUTTON_COLORS.find(c => c.name === '紅色');
+                        } else if (andCombo.text.includes('最小的圓形')) {
+                            buttons[0].size = Math.min(...buttons.map(b => b.size));
+                            buttons[0].shape = ButtonShape.CIRCLE;
+                        } else if (andCombo.text.includes('藍色且數字最大')) {
+                            buttons[0].number = Math.max(...buttons.map(b => b.number));
+                            buttons[0].colorObj = BUTTON_COLORS.find(c => c.name === '藍色');
+                        } else {
+                            buttons[0].shape = ButtonShape.SQUARE;
+                            buttons[0].number = buttons[0].number % 2 === 0 ? buttons[0].number : buttons[0].number + 1;
+                        }
+                        correctIndices = [0];
+                    }
+                    instructionText = typeof andCombo.text === 'function' ? andCombo.text(andCombo.color) : andCombo.text();
+                    break;
+
+                case ChallengeType.COMBINED_OR:
+                    const orCombinations = [
+                        {
+                            check: (btn) => btn.colorObj.name === '紅色' || btn.colorObj.name === '藍色',
+                            text: () => `點擊 <span class="color-swatch" style="background-color: #ef4444;"></span> 或 <span class="color-swatch" style="background-color: #3b82f6;"></span> 按鈕`
+                        },
+                        {
+                            check: (btn) => btn.shape === ButtonShape.CIRCLE || btn.size === Math.max(...buttons.map(b => b.size)),
+                            text: () => '點擊圓形或最大顆按鈕'
+                        },
+                        {
+                            check: (btn) => btn.number % 2 === 0 || btn.number > 80,
+                            text: () => '點擊偶數或大於80的按鈕'
+                        }
+                    ];
+                    const orCombo = randomChoice(orCombinations);
+                    correctIndices = buttons.map((btn, idx) => orCombo.check(btn) ? idx : -1).filter(idx => idx !== -1);
+                    // Ensure at least one button matches OR condition
+                    if (correctIndices.length === 0) {
+                        if (orCombo.text.includes('紅色或藍色')) {
+                            buttons[0].colorObj = BUTTON_COLORS.find(c => c.name === '紅色');
+                        } else if (orCombo.text.includes('圓形或最大顆')) {
+                            buttons[0].shape = ButtonShape.CIRCLE;
+                        } else if (orCombo.text.includes('偶數或大於80')) {
+                            buttons[0].number = buttons[0].number % 2 === 0 ? buttons[0].number : buttons[0].number + 1;
+                        }
+                        correctIndices = [0];
+                    }
+                    instructionText = orCombo.text();
+                    break;
+
+                case ChallengeType.EXCLUSION_NOT:
+                    const exclusions = [
+                        {
+                            check: (btn) => btn.size !== Math.max(...buttons.map(b => b.size)),
+                            text: () => '不要點擊最大顆'
+                        },
+                        {
+                            check: (btn) => btn.colorObj.name !== '紅色',
+                            text: () => `不要點擊 <span class="color-swatch" style="background-color: #ef4444;"></span>`
+                        },
+                        {
+                            check: (btn) => btn.number % 2 !== 0,
+                            text: () => '不要點擊偶數'
+                        }
+                    ];
+                    const exclusion = randomChoice(exclusions);
+                    correctIndices = buttons.map((btn, idx) => exclusion.check(btn) ? idx : -1).filter(idx => idx !== -1);
+                    // Ensure at least one button matches exclusion (NOT) condition
+                    if (correctIndices.length === 0) {
+                        // This should rarely happen, but ensure at least one valid option
+                        if (exclusion.text.includes('不要點擊最大顆')) {
+                            buttons[0].size = Math.min(...buttons.map(b => b.size));
+                        } else if (exclusion.text.includes('不要點擊紅色')) {
+                            buttons[0].colorObj = BUTTON_COLORS.find(c => c.name !== '紅色');
+                        } else if (exclusion.text.includes('不要點擊偶數')) {
+                            buttons[0].number = buttons[0].number % 2 === 1 ? buttons[0].number : buttons[0].number + 1;
+                        }
+                        correctIndices = [0];
+                    }
+                    instructionText = exclusion.text();
+                    isExclusion = true;
+                    break;
+
+                // Position challenges (CT20-CT23)
+                case ChallengeType.LEFTMOST:
+                    correctIndices = [buttons.reduce((minIdx, btn, idx, arr) =>
+                        btn.position && (!arr[minIdx].position || btn.position.x < arr[minIdx].position.x) ? idx : minIdx, 0)];
+                    instructionText = '點擊最左邊的按鈕';
+                    break;
+
+                case ChallengeType.RIGHTMOST:
+                    correctIndices = [buttons.reduce((maxIdx, btn, idx, arr) =>
+                        btn.position && (!arr[maxIdx].position || btn.position.x > arr[maxIdx].position.x) ? idx : maxIdx, 0)];
+                    instructionText = '點擊最右邊的按鈕';
+                    break;
+
+                case ChallengeType.TOPMOST:
+                    correctIndices = [buttons.reduce((minIdx, btn, idx, arr) =>
+                        btn.position && (!arr[minIdx].position || btn.position.y < arr[minIdx].position.y) ? idx : minIdx, 0)];
+                    instructionText = '點擊最上面的按鈕';
+                    break;
+
+                case ChallengeType.BOTTOMMOST:
+                    correctIndices = [buttons.reduce((maxIdx, btn, idx, arr) =>
+                        btn.position && (!arr[maxIdx].position || btn.position.y > arr[maxIdx].position.y) ? idx : maxIdx, 0)];
+                    instructionText = '點擊最下面的按鈕';
+                    break;
+            }
+
+            return { correctIndices, instructionText, isExclusion };
+        }
+
+        function handleButtonClick(buttonIndex) {
+            stopTimer();
+
+            const isCorrect = currentChallenge.correctIndices.includes(buttonIndex);
+
+            if (isCorrect) {
+                advanceQuestion();
+            } else {
+                loseLife();
+            }
+        }
+
+        function advanceQuestion() {
+            if (currentQuestion >= TOTAL_QUESTIONS) {
+                gameState = GameState.WON;
+                showScreen('winScreen');
+            } else {
+                currentQuestion++;
+                generateQuestion();
+            }
+        }
+
+        function loseLife() {
+            livesRemaining--;
+
+            if (livesRemaining <= 0) {
+                gameState = GameState.LOST;
+                document.getElementById('finalQuestion').textContent = currentQuestion;
+                showScreen('loseScreen');
+            } else {
+                // Stay on same question, just regenerate with different buttons
+                generateQuestion();
+            }
+        }
+
+        function updateLivesIndicator() {
+            const indicator = document.getElementById('livesIndicator');
+            indicator.innerHTML = '';
+
+            for (let i = 0; i < INITIAL_LIVES; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'life-icon';
+                heart.textContent = '❤️';
+
+                if (i >= livesRemaining) {
+                    heart.classList.add('lost');
+                }
+
+                indicator.appendChild(heart);
+            }
+        }
+
+        function updateQuestionCounter() {
+            document.getElementById('questionCounter').textContent = `第 ${currentQuestion} 題 / ${TOTAL_QUESTIONS}`;
+        }
+
+        // Timer Functions
+        function startTimer() {
+            timeRemaining = QUESTION_TIME;
+            updateTimerBar();
+
+            timerInterval = setInterval(() => {
+                timeRemaining -= TIMER_UPDATE_INTERVAL;
+
+                if (timeRemaining <= 0) {
+                    stopTimer();
+                    handleTimeout();
+                } else {
+                    updateTimerBar();
+                }
+            }, TIMER_UPDATE_INTERVAL);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerBar() {
+            const fill = document.getElementById('timerBarFill');
+            const percentage = (timeRemaining / QUESTION_TIME) * 100;
+            fill.style.width = `${percentage}%`;
+
+            fill.className = 'timer-bar-fill';
+            if (percentage > 60) {
+                fill.classList.add('time-high');
+            } else if (percentage > 30) {
+                fill.classList.add('time-medium');
+            } else {
+                fill.classList.add('time-low');
+            }
+        }
+
+        function handleTimeout() {
+            loseLife();
+        }
+    </script>
+</body>
+
+</html>
