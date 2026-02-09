@@ -320,6 +320,15 @@
             color: var(--color-danger);
         }
 
+        /* Counter Text */
+        .counter-text {
+            font-size: var(--text-xl);
+            color: var(--color-text-muted);
+            margin-bottom: var(--space-6);
+            min-height: 1.5em;
+            font-weight: 500;
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .game-title {
@@ -367,6 +376,7 @@
         <!-- Win Screen -->
         <div id="winScreen" class="screen">
             <div class="end-message win-message">恭喜你很清醒</div>
+            <p id="winCounter" class="counter-text"></p>
             <button class="btn-primary" onclick="restartGame()">再玩一次</button>
         </div>
 
@@ -374,6 +384,7 @@
         <div id="loseScreen" class="screen">
             <div class="end-message lose-message">你醉了，別喝了</div>
             <p style="margin-bottom: 2rem; color: var(--color-text-muted);">你完成了 <span id="finalQuestion"></span> 題</p>
+            <p id="loseCounter" class="counter-text"></p>
             <button class="btn-primary" onclick="restartGame()">再玩一次</button>
         </div>
     </div>
@@ -458,6 +469,35 @@
         let timeRemaining = QUESTION_TIME;
 
         // Utility Functions
+        // Utility Functions
+        const COUNTER_API_URL = 'https://api.counterapi.dev/v1/drunk_detect_game_v1';
+
+        async function updateCounter(type) {
+            const elementId = type === 'win' ? 'winCounter' : 'loseCounter';
+            const element = document.getElementById(elementId);
+            element.textContent = '計算結果中...';
+
+            try {
+                // Using 'wins' and 'losses' as keys
+                const endpoint = type === 'win' ? 'wins' : 'losses';
+                const response = await fetch(`${COUNTER_API_URL}/${endpoint}/up`);
+
+                if (!response.ok) throw new Error('Counter API failed');
+
+                const data = await response.json();
+                const count = data.count;
+
+                const message = type === 'win'
+                    ? `你是第 ${count} 個清醒的人`
+                    : `你是第 ${count} 個喝醉的人`;
+
+                element.textContent = message;
+            } catch (error) {
+                console.error('Counter error:', error);
+                element.textContent = ''; // Hide on error
+            }
+        }
+
         function random(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
@@ -910,6 +950,7 @@
             if (currentQuestion >= TOTAL_QUESTIONS) {
                 gameState = GameState.WON;
                 showScreen('winScreen');
+                updateCounter('win');
             } else {
                 currentQuestion++;
                 generateQuestion();
@@ -923,6 +964,7 @@
                 gameState = GameState.LOST;
                 document.getElementById('finalQuestion').textContent = currentQuestion;
                 showScreen('loseScreen');
+                updateCounter('lose');
             } else {
                 // Stay on same question, just regenerate with different buttons
                 generateQuestion();
